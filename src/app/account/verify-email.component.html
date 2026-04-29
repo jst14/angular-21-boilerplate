@@ -1,0 +1,11 @@
+<div class="card">
+  <h4 class="card-header">Verify Email</h4>
+  <div class="card-body text-center">
+    <div *ngIf="emailStatus === EmailStatus.Verifying" class="spinner-border" role="status">
+      <span class="visually-hidden">Verifying...</span>
+    </div>
+    <div *ngIf="emailStatus === EmailStatus.Failed" class="alert alert-danger">
+      Verification failed. The token may be invalid or expired.
+    </div>
+  </div>
+</div>

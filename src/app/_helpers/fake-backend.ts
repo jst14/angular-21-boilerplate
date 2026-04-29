@@ -1,0 +1,126 @@
+import { Injectable } from '@angular/core';
+import {
+  HttpRequest, HttpResponse, HttpHandler, HttpEvent,
+  HttpInterceptor, HTTP_INTERCEPTORS
+} from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
+import { delay, materialize, dematerialize } from 'rxjs/operators';
+
+let accounts: any[] = (typeof localStorage !== 'undefined') ? JSON.parse(localStorage.getItem('accounts') || '[]') : [];
+
+@Injectable()
+class FakeBackendInterceptor implements HttpInterceptor {
+  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const { url, method, body } = request;
+
+    return handleRoute();
+
+    function handleRoute() {
+      switch (true) {
+        case url.endsWith('/accounts/authenticate') && method === 'POST': return authenticate();
+        case url.endsWith('/accounts/refresh-token') && method === 'POST': return refreshToken();
+        case url.endsWith('/accounts/register') && method === 'POST': return register();
+        case url.endsWith('/accounts/verify-email') && method === 'POST': return verifyEmail();
+        case url.endsWith('/accounts/forgot-password') && method === 'POST': return forgotPassword();
+        case url.endsWith('/accounts/reset-password') && method === 'POST': return resetPassword();
+        case url.endsWith('/accounts') && method === 'GET': return getAccounts();
+        default: return next.handle(request);
+      }
+    }
+
+    function authenticate() {
+      const { email, password } = body;
+      const account = accounts.find(x => x.email === email && x.password === password && x.isVerified);
+      if (!account) return error('Email or password is incorrect');
+      return ok({ ...basicDetails(account), jwtToken: `fake-jwt-token.${account.id}` });
+    }
+
+    function register() {
+      const account = { ...body };
+      if (accounts.find(x => x.email === account.email)) {
+        return error(`Email ${account.email} is already registered`);
+      }
+      account.id = accounts.length ? Math.max(...accounts.map((x: any) => x.id)) + 1 : 1;
+      account.dateCreated = new Date().toISOString();
+      account.role = accounts.length === 0 ? 'Admin' : 'User';
+      account.verificationToken = new Date().getTime().toString();
+      account.isVerified = false;
+      accounts.push(account);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('accounts', JSON.stringify(accounts));
+      }
+      setTimeout(() => alert(
+        `FAKE EMAIL\n\nTo: ${account.email}\nVerification token: ${account.verificationToken}`
+      ));
+      return ok();
+    }
+
+    function verifyEmail() {
+      const { token } = body;
+      const account = accounts.find(x => x.verificationToken === token);
+      if (!account) return error('Verification failed');
+      account.isVerified = true;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('accounts', JSON.stringify(accounts));
+      }
+      return ok();
+    }
+
+    function forgotPassword() {
+      const { email } = body;
+      const account = accounts.find(x => x.email === email);
+      if (!account) return ok();
+      account.resetToken = new Date().getTime().toString();
+      account.resetTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('accounts', JSON.stringify(accounts));
+      }
+      setTimeout(() => alert(
+        `FAKE EMAIL\n\nTo: ${account.email}\nReset token: ${account.resetToken}`
+      ));
+      return ok();
+    }
+
+    function resetPassword() {
+      const { token, password } = body;
+      const account = accounts.find(x =>
+        x.resetToken === token && new Date(x.resetTokenExpires) > new Date()
+      );
+      if (!account) return error('Invalid or expired token');
+      account.password = password;
+      account.isVerified = true;
+      account.resetToken = undefined;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('accounts', JSON.stringify(accounts));
+      }
+      return ok();
+    }
+
+    function refreshToken() {
+      return ok({ jwtToken: 'fake-refresh-token' });
+    }
+
+    function getAccounts() {
+      return ok(accounts.map(basicDetails));
+    }
+
+    function basicDetails(account: any) {
+      const { id, title, firstName, lastName, email, role } = account;
+      return { id, title, firstName, lastName, email, role };
+    }
+
+    function ok(body?: any) {
+      return of(new HttpResponse({ status: 200, body })).pipe(delay(500));
+    }
+
+    function error(message: string) {
+      return throwError(() => message).pipe(materialize(), delay(500), dematerialize());
+    }
+  }
+}
+
+export const fakeBackendProvider = {
+  provide: HTTP_INTERCEPTORS,
+  useClass: FakeBackendInterceptor,
+  multi: true
+};
