@@ -1,4 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
+
+:root {
+  color-scheme: dark light;
+}
+
+body {
+  background-color: #1a1a1a;
+  color: #e9ecef;
+}
+
 .app-container {
   min-height: 320px;
 }
@@ -6,12 +16,55 @@
 .admin-nav {
   padding-top: 0;
   padding-bottom: 0;
-  background-color: #e8e9ea;
-  border-bottom: 1px solid #ccc;
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3e3e42;
 }
 
 .btn-delete-account {
   width: 40px;
   text-align: center;
   box-sizing: content-box;
+}
+
+/* Dark mode adjustments for form inputs */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  background-color: #2d2d30 !important;
+  color: #e9ecef !important;
+  border-color: #3e3e42 !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"])::placeholder,
+textarea::placeholder {
+  color: #858585;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+textarea:focus,
+select:focus {
+  background-color: #3e3e42 !important;
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Dark mode for cards and panels */
+.card {
+  background-color: #2d2d30;
+  border-color: #3e3e42;
+  color: #e9ecef;
+}
+
+.alert {
+  background-color: #2d2d30;
+  color: #e9ecef;
+}
+
+/* Ensure links are readable in dark mode */
+a {
+  color: #6ba3ff;
+}
+
+a:hover {
+  color: #8fb3ff;
 }
