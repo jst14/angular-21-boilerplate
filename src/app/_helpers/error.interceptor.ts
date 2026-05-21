@@ -17,7 +17,13 @@ export class ErrorInterceptor implements HttpInterceptor {
       }
 
       const error = (err && err.error && err.error.message) || err.statusText;
-      console.error(err);
+
+      // Don't log expected 401 from refresh-token on startup (normal when no session exists)
+      const isStartupRefresh = err.status === 401 && request.url.includes('/accounts/refresh-token');
+      if (!isStartupRefresh) {
+        console.error(err);
+      }
+
       return throwError(() => error);
     }))
   }
