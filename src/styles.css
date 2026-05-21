@@ -63,6 +63,7 @@ select:focus {
 /* Ensure links are readable in dark mode */
 a {
   color: #6ba3ff;
+  cursor: pointer;
 }
 
 a:hover {
